@@ -24,12 +24,25 @@ export async function POST(req: NextRequest) {
   }
 
   const { question_id, sql } = parsed.data;
+  console.log('Looking for question:', question_id);
+  console.log('DB path:', process.env.RENDER ? '/opt/render/project/src/data/app.db' : 'local');
+
   const db = getAppDb();
 
   // Fetch question (including hidden solution_sql — server side only)
-  const question = db.prepare(`
+  let question = db.prepare(`
     SELECT id, dataset_name, solution_sql, order_matters FROM questions WHERE id = ?
   `).get(question_id) as { id: number; dataset_name: string; solution_sql: string; order_matters: number } | undefined;
+
+  console.log('Found question:', question);
+
+  if (!question) {
+    // Fallback: get a fresh db handle and retry once before giving up
+    const retryDb = getAppDb();
+    question = retryDb.prepare(`
+      SELECT id, dataset_name, solution_sql, order_matters FROM questions WHERE id = ?
+    `).get(question_id) as { id: number; dataset_name: string; solution_sql: string; order_matters: number } | undefined;
+  }
 
   if (!question) {
     return NextResponse.json({ success: false, error: 'Question not found' }, { status: 404 });
