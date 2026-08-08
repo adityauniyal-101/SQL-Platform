@@ -22,6 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/questions" className="text-gray-400 hover:text-white text-sm transition-colors">Questions</Link>
           <Link href="/admin/attempts" className="text-gray-400 hover:text-white text-sm transition-colors">Attempts</Link>
           <Link href="/admin/assessments" className="text-gray-400 hover:text-white text-sm transition-colors">Assessments</Link>
+          <Link href="/admin/datasets" className="text-gray-400 hover:text-white text-sm transition-colors">Datasets</Link>
           <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">← Student View</Link>
         </div>
         <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 text-sm transition-colors">

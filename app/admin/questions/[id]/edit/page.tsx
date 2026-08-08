@@ -9,6 +9,10 @@ export default function EditQuestion({ params }: { params: { id: string } }) {
     dataset_name: 'ecommerce', solution_sql: '', order_matters: false,
   });
   const [saving, setSaving] = useState(false);
+  const [datasets, setDatasets] = useState<{name: string; display_name: string}[]>([]);
+  useEffect(() => {
+    fetch('/api/admin/datasets').then(r => r.json()).then(d => setDatasets(d.datasets));
+  }, []);
 
   useEffect(() => {
     fetch('/api/admin/questions').then(r => r.json()).then(d => {
@@ -55,6 +59,16 @@ export default function EditQuestion({ params }: { params: { id: string } }) {
             <option value="hard">Hard</option>
           </select>
         </div>
+        <div>
+          <label className="block text-gray-400 text-sm mb-2">Dataset</label>
+          <select value={form.dataset_name} onChange={e => setForm({...form, dataset_name: e.target.value})}
+            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+            {datasets.map(d => (
+              <option key={d.name} value={d.name}>{d.display_name}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-gray-400 text-sm mb-2">Solution SQL</label>
           <textarea value={form.solution_sql} onChange={e => setForm({...form, solution_sql: e.target.value})}

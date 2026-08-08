@@ -106,3 +106,12 @@ export interface AssessmentAnswer {
   is_correct: number | null;
   executed_at: string | null;
 }
+
+export interface Dataset {
+  id: number;
+  name: string;
+  display_name: string;
+  filename: string;
+  table_summary: string | null;
+  created_at: string;
+}

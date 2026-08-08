@@ -84,5 +84,19 @@ function initSchema(db: Database.Database): void {
       FOREIGN KEY (question_id) REFERENCES questions(id),
       UNIQUE (submission_id, question_id)
     );
+
+    CREATE TABLE IF NOT EXISTS datasets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      display_name TEXT NOT NULL,
+      filename TEXT NOT NULL,
+      table_summary TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
+
+  db.prepare(`
+    INSERT OR IGNORE INTO datasets (name, display_name, filename, table_summary)
+    VALUES ('ecommerce', 'E-Commerce Demo', 'ecommerce.db', 'customers, products, orders, order_items')
+  `).run();
 }
