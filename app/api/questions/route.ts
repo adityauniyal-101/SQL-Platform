@@ -13,7 +13,7 @@ export async function GET() {
     `).all() as Omit<Question, 'solution_sql'>[];
 
     return NextResponse.json({ questions });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch questions' }, { status: 500 });
   }
 }

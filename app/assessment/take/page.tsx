@@ -38,6 +38,20 @@ export default function TakeAssessment() {
   const [running, setRunning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const handleSubmit = useCallback(async (s?: Session) => {
+    const activeSession = s || session;
+    if (!activeSession) return;
+    setSubmitting(true);
+    const res = await fetch('/api/assessment/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submission_id: activeSession.submission_id }),
+    });
+    const data = await res.json();
+    localStorage.removeItem('assessment_session');
+    router.push(`/assessment/result?submission_id=${activeSession.submission_id}&score=${data.score}&total=${data.total}`);
+  }, [session, router]);
+
   useEffect(() => {
     const raw = localStorage.getItem('assessment_session');
     if (!raw) { router.push('/assessment'); return; }
@@ -48,7 +62,7 @@ export default function TakeAssessment() {
     const remaining = totalSecs - elapsed;
     if (remaining <= 0) { handleSubmit(s); return; }
     setTimeLeft(remaining);
-  }, []);
+  }, [handleSubmit]);
 
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -63,21 +77,7 @@ export default function TakeAssessment() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [timeLeft, session]);
-
-  const handleSubmit = useCallback(async (s?: Session) => {
-    const activeSession = s || session;
-    if (!activeSession) return;
-    setSubmitting(true);
-    const res = await fetch('/api/assessment/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submission_id: activeSession.submission_id }),
-    });
-    const data = await res.json();
-    localStorage.removeItem('assessment_session');
-    router.push(`/assessment/result?submission_id=${activeSession.submission_id}&score=${data.score}&total=${data.total}`);
-  }, [session, router]);
+  }, [timeLeft, session, handleSubmit]);
 
   const handleRun = async () => {
     if (!session) return;
