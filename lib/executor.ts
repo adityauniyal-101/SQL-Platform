@@ -1,7 +1,9 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const DATASETS_DIR = path.join(process.cwd(), 'data', 'datasets');
+const DATASETS_DIR = process.env.RENDER
+  ? '/opt/render/project/src/data/datasets'
+  : path.join(process.cwd(), 'data', 'datasets');
 const MAX_ROWS = 500;
 const QUERY_TIMEOUT_MS = 5000;
 

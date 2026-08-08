@@ -3,7 +3,9 @@ import path from 'path';
 import fs from 'fs';
 
 // Setup dataset
-const DATASETS_DIR = path.join(process.cwd(), 'data', 'datasets');
+const DATASETS_DIR = process.env.RENDER
+  ? '/opt/render/project/src/data/datasets'
+  : path.join(process.cwd(), 'data', 'datasets');
 if (!fs.existsSync(DATASETS_DIR)) fs.mkdirSync(DATASETS_DIR, { recursive: true });
 
 const datasetDb = new Database(path.join(DATASETS_DIR, 'ecommerce.db'));
@@ -97,7 +99,9 @@ datasetDb.close();
 console.log('✅ ecommerce.db dataset created');
 
 // Seed questions into app DB
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.RENDER
+  ? '/opt/render/project/src/data'
+  : path.join(process.cwd(), 'data');
 const appDb = new Database(path.join(DATA_DIR, 'app.db'));
 
 appDb.pragma('foreign_keys = ON');

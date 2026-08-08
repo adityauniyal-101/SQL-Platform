@@ -4,7 +4,9 @@ import path from 'path';
 import fs from 'fs';
 import Database from 'better-sqlite3';
 
-const DATASETS_DIR = path.join(process.cwd(), 'data', 'datasets');
+const DATASETS_DIR = process.env.RENDER
+  ? '/opt/render/project/src/data/datasets'
+  : path.join(process.cwd(), 'data', 'datasets');
 
 export async function GET() {
   const db = getAppDb();

@@ -3,7 +3,9 @@ import { getAppDb } from '@/lib/db';
 import path from 'path';
 import fs from 'fs';
 
-const DATASETS_DIR = path.join(process.cwd(), 'data', 'datasets');
+const DATASETS_DIR = process.env.RENDER
+  ? '/opt/render/project/src/data/datasets'
+  : path.join(process.cwd(), 'data', 'datasets');
 
 export async function DELETE(_req: NextRequest, { params }: { params: { name: string } }) {
   if (params.name === 'ecommerce') {
