@@ -10,8 +10,8 @@ function generateCode(): string {
 }
 
 export async function GET() {
-  const db = getAppDb();
-  const assessments = db.prepare(`
+  const db = await getAppDb();
+  const assessments = await db.all(`
     SELECT
       a.*,
       COUNT(DISTINCT aq.id) as question_count,
@@ -21,7 +21,7 @@ export async function GET() {
     LEFT JOIN assessment_submissions s ON a.id = s.assessment_id AND s.is_submitted = 1
     GROUP BY a.id
     ORDER BY a.created_at DESC
-  `).all();
+  `);
   return NextResponse.json({ assessments });
 }
 
@@ -36,26 +36,26 @@ export async function POST(req: NextRequest) {
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
 
-  const db = getAppDb();
+  const db = await getAppDb();
   const code = generateCode();
 
-  const result = db.prepare(`
+  const result = await db.run(`
     INSERT INTO assessments (title, access_code, time_limit_mins)
     VALUES (?, ?, ?)
-  `).run(parsed.data.title, code, parsed.data.time_limit_mins);
+  `, [parsed.data.title, code, parsed.data.time_limit_mins]);
 
   const assessmentId = result.lastInsertRowid;
-  const insertQ = db.prepare(`
+  const insertQSql = `
     INSERT INTO assessment_questions (assessment_id, question_id, order_index)
     VALUES (?, ?, ?)
-  `);
+  `;
 
-  const insertAll = db.transaction(() => {
-    parsed.data.question_ids.forEach((qid, i) => {
-      insertQ.run(assessmentId, qid, i);
-    });
-  });
-  insertAll();
+  await db.batch(
+    parsed.data.question_ids.map((qid, i) => ({
+      sql: insertQSql,
+      args: [assessmentId, qid, i],
+    }))
+  );
 
   return NextResponse.json({ id: assessmentId, access_code: code }, { status: 201 });
 }

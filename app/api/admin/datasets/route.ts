@@ -9,8 +9,8 @@ const DATASETS_DIR = process.env.RENDER
   : path.join(process.cwd(), 'data', 'datasets');
 
 export async function GET() {
-  const db = getAppDb();
-  const datasets = db.prepare('SELECT * FROM datasets ORDER BY created_at DESC').all();
+  const db = await getAppDb();
+  const datasets = await db.all('SELECT * FROM datasets ORDER BY created_at DESC');
   return NextResponse.json({ datasets });
 }
 
@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Save to datasets table
-  const appDb = getAppDb();
+  const appDb = await getAppDb();
   try {
-    appDb.prepare(`
+    await appDb.run(`
       INSERT INTO datasets (name, display_name, filename, table_summary)
       VALUES (?, ?, ?, ?)
-    `).run(safeName, displayName, filename, tableSummary);
+    `, [safeName, displayName, filename, tableSummary]);
   } catch {
     fs.unlinkSync(filepath);
     return NextResponse.json({ error: 'Dataset name already exists' }, { status: 400 });

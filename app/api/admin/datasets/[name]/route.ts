@@ -12,16 +12,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: { name: st
     return NextResponse.json({ error: 'Cannot delete the default dataset' }, { status: 400 });
   }
 
-  const db = getAppDb();
+  const db = await getAppDb();
 
   // Check if any questions use this dataset
-  const inUse = db.prepare('SELECT COUNT(*) as count FROM questions WHERE dataset_name = ?').get(params.name) as { count: number };
+  const inUse = await db.get('SELECT COUNT(*) as count FROM questions WHERE dataset_name = ?', [params.name]) as { count: number };
   if (inUse.count > 0) {
     return NextResponse.json({ error: `Cannot delete — ${inUse.count} question(s) use this dataset` }, { status: 400 });
   }
 
   // Delete from DB
-  db.prepare('DELETE FROM datasets WHERE name = ?').run(params.name);
+  await db.run('DELETE FROM datasets WHERE name = ?', [params.name]);
 
   // Delete file
   const filepath = path.join(DATASETS_DIR, `${params.name}.db`);

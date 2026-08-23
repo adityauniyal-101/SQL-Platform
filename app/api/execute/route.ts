@@ -27,21 +27,21 @@ export async function POST(req: NextRequest) {
   console.log('Looking for question:', question_id);
   console.log('DB path:', process.env.RENDER ? '/opt/render/project/src/data/app.db' : 'local');
 
-  const db = getAppDb();
+  const db = await getAppDb();
 
   // Fetch question (including hidden solution_sql — server side only)
-  let question = db.prepare(`
+  let question = await db.get(`
     SELECT id, dataset_name, solution_sql, order_matters FROM questions WHERE id = ?
-  `).get(question_id) as { id: number; dataset_name: string; solution_sql: string; order_matters: number } | undefined;
+  `, [question_id]) as { id: number; dataset_name: string; solution_sql: string; order_matters: number } | undefined;
 
   console.log('Found question:', question);
 
   if (!question) {
     // Fallback: get a fresh db handle and retry once before giving up
-    const retryDb = getAppDb();
-    question = retryDb.prepare(`
+    const retryDb = await getAppDb();
+    question = await retryDb.get(`
       SELECT id, dataset_name, solution_sql, order_matters FROM questions WHERE id = ?
-    `).get(question_id) as { id: number; dataset_name: string; solution_sql: string; order_matters: number } | undefined;
+    `, [question_id]) as { id: number; dataset_name: string; solution_sql: string; order_matters: number } | undefined;
   }
 
   if (!question) {
@@ -58,10 +58,10 @@ export async function POST(req: NextRequest) {
     question.order_matters === 1
   );
 
-  db.prepare(`
+  await db.run(`
     INSERT INTO attempts (question_id, student_id, submitted_sql, is_correct, error_message)
     VALUES (?, 'anonymous', ?, ?, ?)
-  `).run(question_id, sql, isCorrect ? 1 : 0, isError ? gradeResult.error : null);
+  `, [question_id, sql, isCorrect ? 1 : 0, isError ? gradeResult.error : null]);
 
   if (isError) {
     const response: ExecuteResponse = {

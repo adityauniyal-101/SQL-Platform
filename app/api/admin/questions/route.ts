@@ -3,8 +3,8 @@ import { getAppDb } from '@/lib/db';
 import { z } from 'zod';
 
 export async function GET() {
-  const db = getAppDb();
-  const questions = db.prepare(`
+  const db = await getAppDb();
+  const questions = await db.all(`
     SELECT
       q.*,
       COUNT(a.id) as attempt_count,
@@ -13,7 +13,7 @@ export async function GET() {
     LEFT JOIN attempts a ON q.id = a.question_id
     GROUP BY q.id
     ORDER BY q.id ASC
-  `).all();
+  `);
 
   return NextResponse.json({ questions });
 }
@@ -35,11 +35,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
   }
 
-  const db = getAppDb();
-  const result = db.prepare(`
+  const db = await getAppDb();
+  const result = await db.run(`
     INSERT INTO questions (title, description, difficulty, dataset_name, solution_sql, order_matters)
     VALUES (@title, @description, @difficulty, @dataset_name, @solution_sql, @order_matters)
-  `).run({
+  `, {
     ...parsed.data,
     order_matters: parsed.data.order_matters ? 1 : 0,
   });

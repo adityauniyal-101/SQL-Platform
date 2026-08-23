@@ -14,19 +14,19 @@ export async function POST(req: NextRequest) {
   const parsed = RunSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
 
-  const db = getAppDb();
+  const db = await getAppDb();
 
-  const submission = db.prepare(`
+  const submission = await db.get(`
     SELECT * FROM assessment_submissions WHERE id = ? AND is_submitted = 0
-  `).get(parsed.data.submission_id) as { id: number; assessment_id: number } | undefined;
+  `, [parsed.data.submission_id]) as { id: number; assessment_id: number } | undefined;
 
   if (!submission) return NextResponse.json({ error: 'Submission not found or already submitted' }, { status: 404 });
 
-  const question = db.prepare(`
+  const question = await db.get(`
     SELECT q.* FROM questions q
     JOIN assessment_questions aq ON q.id = aq.question_id
     WHERE q.id = ? AND aq.assessment_id = ?
-  `).get(parsed.data.question_id, submission.assessment_id) as { dataset_name: string; solution_sql: string } | undefined;
+  `, [parsed.data.question_id, submission.assessment_id]) as { dataset_name: string; solution_sql: string } | undefined;
 
   if (!question) return NextResponse.json({ error: 'Question not in this assessment' }, { status: 404 });
 
@@ -37,19 +37,19 @@ export async function POST(req: NextRequest) {
   }
 
   // Save/update the answer (last run before submit)
-  const existing = db.prepare(`
+  const existing = await db.get(`
     SELECT id FROM assessment_answers WHERE submission_id = ? AND question_id = ?
-  `).get(parsed.data.submission_id, parsed.data.question_id);
+  `, [parsed.data.submission_id, parsed.data.question_id]);
 
   if (existing) {
-    db.prepare(`
+    await db.run(`
       UPDATE assessment_answers SET submitted_sql = ?, executed_at = CURRENT_TIMESTAMP WHERE submission_id = ? AND question_id = ?
-    `).run(parsed.data.sql, parsed.data.submission_id, parsed.data.question_id);
+    `, [parsed.data.sql, parsed.data.submission_id, parsed.data.question_id]);
   } else {
-    db.prepare(`
+    await db.run(`
       INSERT INTO assessment_answers (submission_id, question_id, submitted_sql, executed_at)
       VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(parsed.data.submission_id, parsed.data.question_id, parsed.data.sql);
+    `, [parsed.data.submission_id, parsed.data.question_id, parsed.data.sql]);
   }
 
   // Return result rows but NOT correct/incorrect

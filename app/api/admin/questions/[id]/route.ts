@@ -19,13 +19,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
   }
 
-  const db = getAppDb();
-  db.prepare(`
+  const db = await getAppDb();
+  await db.run(`
     UPDATE questions
     SET title=@title, description=@description, difficulty=@difficulty,
         dataset_name=@dataset_name, solution_sql=@solution_sql, order_matters=@order_matters
     WHERE id=@id
-  `).run({
+  `, {
     ...parsed.data,
     order_matters: parsed.data.order_matters ? 1 : 0,
     id: parseInt(params.id),
@@ -35,8 +35,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const db = getAppDb();
-  db.prepare('DELETE FROM attempts WHERE question_id = ?').run(parseInt(params.id));
-  db.prepare('DELETE FROM questions WHERE id = ?').run(parseInt(params.id));
+  const db = await getAppDb();
+  await db.run('DELETE FROM attempts WHERE question_id = ?', [parseInt(params.id)]);
+  await db.run('DELETE FROM questions WHERE id = ?', [parseInt(params.id)]);
   return NextResponse.json({ success: true });
 }

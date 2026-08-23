@@ -12,25 +12,25 @@ export async function POST(req: NextRequest) {
   const parsed = JoinSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
 
-  const db = getAppDb();
-  const assessment = db.prepare(`
+  const db = await getAppDb();
+  const assessment = await db.get(`
     SELECT * FROM assessments WHERE access_code = ? AND is_active = 1
-  `).get(parsed.data.access_code.toUpperCase()) as { id: number; title: string; time_limit_mins: number } | undefined;
+  `, [parsed.data.access_code.toUpperCase()]) as { id: number; title: string; time_limit_mins: number } | undefined;
 
   if (!assessment) return NextResponse.json({ error: 'Invalid or inactive access code' }, { status: 404 });
 
-  const submission = db.prepare(`
+  const submission = await db.run(`
     INSERT INTO assessment_submissions (assessment_id, student_name)
     VALUES (?, ?)
-  `).run(assessment.id, parsed.data.student_name);
+  `, [assessment.id, parsed.data.student_name]);
 
-  const questions = db.prepare(`
+  const questions = await db.all(`
     SELECT aq.order_index, q.id, q.title, q.description, q.difficulty, q.dataset_name
     FROM assessment_questions aq
     JOIN questions q ON aq.question_id = q.id
     WHERE aq.assessment_id = ?
     ORDER BY aq.order_index ASC
-  `).all(assessment.id);
+  `, [assessment.id]);
 
   return NextResponse.json({
     submission_id: submission.lastInsertRowid,
