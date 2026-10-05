@@ -11,8 +11,9 @@ function formatCell(value: unknown): string {
 export default function ResultTable({ columns, rows }: ResultTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="flex h-24 items-center justify-center rounded-lg border border-gray-700 bg-gray-900 text-sm text-gray-400">
-        No rows returned
+      <div className="flex h-24 flex-col items-center justify-center gap-1 rounded-lg border border-gray-700 bg-gray-900 text-sm text-gray-400">
+        <span>No rows returned</span>
+        <span className="text-xs text-gray-500">Your query ran fine. No rows matched it. Check your WHERE / JOIN conditions.</span>
       </div>
     );
   }

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAppDb } from '@/lib/db';
+import { ASSESSMENT_COOKIE, getAssessmentSubmissionId } from '@/lib/auth';
 
-export async function GET(_req: NextRequest, { params }: { params: { submission_id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { submission_id: string } }) {
   const db = await getAppDb();
   const sid = parseInt(params.submission_id);
+
+  const sessionSubmissionId = await getAssessmentSubmissionId(req.cookies.get(ASSESSMENT_COOKIE)?.value);
+  if (sessionSubmissionId !== sid) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   const submission = await db.get(`
     SELECT * FROM assessment_submissions WHERE id = ? AND is_submitted = 1

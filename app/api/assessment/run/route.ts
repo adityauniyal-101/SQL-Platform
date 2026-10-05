@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAppDb } from '@/lib/db';
 import { executeAndGrade } from '@/lib/executor';
+import { ASSESSMENT_COOKIE, getAssessmentSubmissionId } from '@/lib/auth';
 import { z } from 'zod';
 
 const RunSchema = z.object({
@@ -10,9 +11,19 @@ const RunSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+  }
   const parsed = RunSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+
+  const sessionSubmissionId = await getAssessmentSubmissionId(req.cookies.get(ASSESSMENT_COOKIE)?.value);
+  if (sessionSubmissionId !== parsed.data.submission_id) {
+    return NextResponse.json({ success: false, error: 'This assessment session does not belong to you' }, { status: 403 });
+  }
 
   const db = await getAppDb();
 
@@ -30,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   if (!question) return NextResponse.json({ error: 'Question not in this assessment' }, { status: 404 });
 
-  const result = executeAndGrade(question.dataset_name, parsed.data.sql, question.solution_sql);
+  const result = await executeAndGrade(question.dataset_name, parsed.data.sql, question.solution_sql);
 
   if (result.error !== null) {
     return NextResponse.json({ success: false, error: result.error });

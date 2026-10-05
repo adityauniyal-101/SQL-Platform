@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Question not found' }, { status: 404 });
   }
 
-  const gradeResult = executeAndGrade(question.dataset_name, sql, question.solution_sql);
+  const gradeResult = await executeAndGrade(question.dataset_name, sql, question.solution_sql);
 
   // Log attempt regardless of outcome
   const isError = gradeResult.error !== null;

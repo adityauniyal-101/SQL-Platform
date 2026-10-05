@@ -8,6 +8,10 @@ const DATASETS_DIR = process.env.RENDER
   : path.join(process.cwd(), 'data', 'datasets');
 
 export async function DELETE(_req: NextRequest, { params }: { params: { name: string } }) {
+  if (!/^[a-z0-9_]+$/.test(params.name)) {
+    return NextResponse.json({ error: 'Invalid dataset name' }, { status: 400 });
+  }
+
   if (params.name === 'ecommerce') {
     return NextResponse.json({ error: 'Cannot delete the default dataset' }, { status: 400 });
   }

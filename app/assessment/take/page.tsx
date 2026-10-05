@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import SchemaReference from '@/components/SchemaReference';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -161,12 +162,7 @@ export default function TakeAssessment() {
 
           <div className="mt-6">
             <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Schema Reference</p>
-            <div className="bg-gray-900 rounded-lg p-3 text-xs text-gray-400 font-mono space-y-1">
-              <div>customers(id, name, email, city, created_at)</div>
-              <div>products(id, name, category, price, stock)</div>
-              <div>orders(id, customer_id, order_date, status)</div>
-              <div>order_items(id, order_id, product_id, quantity, unit_price)</div>
-            </div>
+            <SchemaReference datasetName={question.dataset_name} />
           </div>
 
           <div className="mt-4 p-3 bg-yellow-950 border border-yellow-800 rounded-lg">

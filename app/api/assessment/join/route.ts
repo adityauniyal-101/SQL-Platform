@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAppDb } from '@/lib/db';
+import { ASSESSMENT_COOKIE, signToken } from '@/lib/auth';
 import { z } from 'zod';
 
 const JoinSchema = z.object({
@@ -8,7 +9,12 @@ const JoinSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+  }
   const parsed = JoinSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
 
@@ -32,10 +38,21 @@ export async function POST(req: NextRequest) {
     ORDER BY aq.order_index ASC
   `, [assessment.id]);
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     submission_id: submission.lastInsertRowid,
     assessment_title: assessment.title,
     time_limit_mins: assessment.time_limit_mins,
     questions,
   });
+
+  // Bind this submission to this browser so other people can't run/submit/view it by guessing ids
+  const ttlSecs = (assessment.time_limit_mins + 60) * 60;
+  response.cookies.set(ASSESSMENT_COOKIE, await signToken(`sub${submission.lastInsertRowid}`, ttlSecs), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: ttlSecs,
+    path: '/',
+  });
+  return response;
 }
