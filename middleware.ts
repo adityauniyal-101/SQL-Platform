@@ -50,10 +50,29 @@ function rateLimit(req: NextRequest, pathname: string): NextResponse | null {
   return null;
 }
 
+// ---------- CSRF (defense in depth on top of SameSite=strict cookies) ----------
+// Browsers always send Origin on cross-site POST/PUT/PATCH/DELETE. Reject it unless it is us.
+
+function isCrossOriginWrite(req: NextRequest): boolean {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return false;
+  const origin = req.headers.get('origin');
+  if (!origin) return false; // non-browser clients (curl, server-to-server) carry no cookies of ours
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+  try {
+    return new URL(origin).host !== host;
+  } catch {
+    return true;
+  }
+}
+
 // ---------- Middleware ----------
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith('/api') && isCrossOriginWrite(req)) {
+    return NextResponse.json({ error: 'Cross-site request blocked' }, { status: 403 });
+  }
 
   const limited = rateLimit(req, pathname);
   if (limited) return limited;

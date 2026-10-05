@@ -62,6 +62,7 @@ Replaces the manual workflow of sharing datasets in Excel and verifying queries 
 - Assessment sessions: join sets signed httpOnly cookie `assessment_session`; run/submit/result reject a submission_id that doesn't match it
 - Query execution: executor runs student + solution SQL in a child process, SIGKILLed after 5s, 128MB heap cap, max 3 concurrent (queue 20). executeAndGrade is async
 - Security headers + CSP in next.config.mjs (CSP allows cdn.jsdelivr.net for Monaco)
+- CSRF: cookies are SameSite=strict, and middleware rejects non-GET /api requests whose Origin header is a different host
 
 ## Current Build Status
 ### Done
@@ -90,7 +91,9 @@ Replaces the manual workflow of sharing datasets in Excel and verifying queries 
 
 ## Running the Project
 - npm run dev — start dev server (localhost:3000)
-- npm run seed — seed (Render, uses real env vars); npm run seed:turso — local reseed using .env.local
+- npm run seed — SAFE seed, runs on every Render deploy: creates missing tables/dataset/demo questions, never deletes (uses real env vars)
+- npm run seed:turso — same safe seed locally, using .env.local
+- npm run seed:reset — DESTRUCTIVE: wipes all questions, attempts, assessments, submissions (local, .env.local). Never use in a deploy step
 - NOTE: local .env.local points at the PRODUCTION Turso DB
 - Admin login — localhost:3000/admin/login (password: ADMIN_PASSWORD from .env.local)
 - Student practice — localhost:3000

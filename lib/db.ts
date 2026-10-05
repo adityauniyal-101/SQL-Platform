@@ -298,7 +298,20 @@ async function autoSeed(): Promise<void> {
   await seedDefaultQuestions();
 }
 
-/** Hard reset used by `npm run seed`: wipes and recreates demo data unconditionally. */
+/**
+ * Safe seed used by `npm run seed` (runs on every Render deploy): creates missing tables,
+ * the ecommerce dataset file if absent, and the demo questions only if there are none.
+ * Never deletes data.
+ */
+export async function ensureSeeded(): Promise<void> {
+  await getAppDb(); // initSchema + autoSeed (questions only when the table is empty)
+  seedEcommerceDataset(false);
+}
+
+/**
+ * DESTRUCTIVE hard reset (`npm run seed:reset`): wipes ALL questions, attempts, assessments
+ * and submissions, then recreates demo data. Never wire this into a deploy step.
+ */
 export async function resetAppDb(): Promise<void> {
   await getAppDb();
   seedEcommerceDataset(true);
